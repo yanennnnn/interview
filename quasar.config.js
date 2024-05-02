@@ -83,7 +83,7 @@ module.exports = configure(function (/* ctx */) {
     devServer: {
       open: true, // opens browser window automatically
     },
-    // port: 9001,
+    port: 9001,
     proxy: {
       // 將所有以/api開頭的請求代理
       '/crudTest': {

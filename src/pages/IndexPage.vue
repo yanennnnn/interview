@@ -2,9 +2,33 @@
   <q-page class="row q-pt-xl">
     <div class="full-width q-px-xl">
       <div class="q-mb-xl">
-        <q-input v-model="tempData.name" label="姓名" />
-        <q-input v-model="tempData.age" label="年齡" />
-        <q-btn color="primary" class="q-mt-md">新增</q-btn>
+        <q-input
+          ref="nameRef"
+          v-model="tempData.name"
+          label="姓名"
+          :rules="[(val) => !!val || '姓名未填寫']"
+        />
+        <q-input
+          ref="ageRef"
+          v-model="tempData.age"
+          label="年齡"
+          :rules="ageRules"
+        />
+        <q-btn
+          v-if="isEdit"
+          color="primary"
+          class="q-mt-md"
+          @click="updateTempData"
+          >更新</q-btn
+        >
+        <q-btn
+          v-else
+          color="primary"
+          class="q-mt-md"
+          @click="addTempData"
+          :disabled="!tempData.name || !tempData.age"
+          >新增</q-btn
+        >
       </div>
 
       <q-table
@@ -118,13 +142,66 @@ const tableButtons = ref([
     status: 'delete',
   },
 ]);
-
-const tempData = ref({
+const isEdit = ref<boolean>(false);
+const tempData = ref<{ name: string; age: number }>({
   name: '',
   age: '',
 });
+const nameRef = ref(null);
+const ageRef = ref(null);
+const ageRules = [
+  (val) => (val !== null && val !== '') || '年齡未填寫',
+  (val) => (val > 0 && val < 100) || '請輸入真實年齡',
+];
+// add
+async function addTempData(): Promise<void> {
+  await axios.post(
+    'https://dahua.metcfire.com.tw/api/CRUDTest/',
+    tempData.value
+  );
+  getTempData();
+}
+// get
+async function getTempData(): Promise<void> {
+  const { data }: { data: { id: string; name: string; age: string }[] } =
+    await axios.get('https://dahua.metcfire.com.tw/api/CRUDTest/a');
+  blockData.value = data;
+}
+// patch
+async function updateTempData(): Promise<void> {
+  try {
+    await axios.patch(
+      'https://dahua.metcfire.com.tw/api/CRUDTest',
+      tempData.value
+    );
+    tempData.value = {
+      name: '',
+      age: '',
+    };
+    getTempData();
+    isEdit.value = false;
+    ageRef.value.resetValidation();
+    nameRef.value.resetValidation();
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// Delete
+async function removeTempData(id: string): Promise<void> {
+  await axios.delete(`https://dahua.metcfire.com.tw/api/CRUDTest/${id}`);
+
+  getTempData();
+}
+getTempData();
+
 function handleClickOption(btn, data) {
-  // ...
+  if (btn.status === 'edit') {
+    tempData.value = data;
+    isEdit.value = true;
+  } else if (btn.status === 'delete') {
+    removeTempData(data.id);
+  }
 }
 </script>
 
